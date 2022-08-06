@@ -16,7 +16,7 @@
           :key="item.id"
           @click.left="check(item)"
           @click.right.prevent="mark(item)"
-          @touchstart="touchstartHandler(item)"
+          @touchstart="touchstartHandler($event,item)"
           @touchend="touchendHandler"
           :class="item.isShow ? 'show' : 'close'"
         >
@@ -242,7 +242,8 @@ export default defineComponent({
     }
 
     let timer;
-    function touchstartHandler(item) {
+    function touchstartHandler(e,item) {
+      e.preventDefault()
       timer = setTimeout(() => {
         mark(item);
       }, 500);
