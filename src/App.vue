@@ -1,4 +1,12 @@
 <template>
+  <h2>
+    当前难度：{{
+      level.current === 10 ? "菜🐔" : level.current === 6 ? "普通" : '"地狱"'
+    }}
+  </h2>
+  <button @click="changeLevel(l)" v-for="(l, i) in level.levels" :key="i">
+    {{ l === 10 ? "菜🐔" : l === 6 ? "普通" : '"地狱"' }}
+  </button>
   <main>
     <div class="table">
       <div class="row" v-for="(row, index) in baseDate" :key="index">
@@ -8,6 +16,8 @@
           :key="item.id"
           @click.left="check(item)"
           @click.right.prevent="mark(item)"
+          @touchstart="touchstartHandler($event,item)"
+          @touchend="touchendHandler"
           :class="item.isShow ? 'show' : 'close'"
         >
           <span v-show="item.isMark">⛳</span>
@@ -20,7 +30,7 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, onMounted, ref, reactive } from "vue";
 import { nanoid } from "nanoid";
 
 const itemTemplate = {
@@ -32,13 +42,17 @@ const itemTemplate = {
   y: null,
   x: null,
 };
-// 🚩 💥 Bomb
+// ⛳ 💥 Bomb
 
 export default defineComponent({
   setup() {
     const baseDate = ref([]);
     const resultArr = ref([]);
     const guessArr = ref([]);
+    const level = reactive({
+      current: 10,
+      levels: [10, 6, 3],
+    });
 
     function gameInit() {
       let arr = [];
@@ -61,7 +75,8 @@ export default defineComponent({
       //初始化炸弹
       baseDate.value.forEach((row) => {
         row.forEach((item) => {
-          item.isBomb = Math.ceil(Math.random() * 10) === 8 ? true : false;
+          item.isBomb =
+            Math.ceil(Math.random() * level.current) === 3 ? true : false;
           item.data = item.isBomb ? "💥" : "";
           if (item.isBomb) {
             resultArr.value.push(item.id);
@@ -119,6 +134,11 @@ export default defineComponent({
           baseDate.value[y][x].data = count;
         }
       }
+    }
+
+    function changeLevel(l) {
+      level.current = l;
+      gameInit()
     }
 
     function check(item) {
@@ -209,6 +229,7 @@ export default defineComponent({
         if (isWin()) {
           baseDate.value.forEach((row) => {
             row.forEach((item) => {
+              if (item.isMark) item.data = "⛳";
               item.isShow = true;
               item.isMark = false;
             });
@@ -218,6 +239,17 @@ export default defineComponent({
           }, 0);
         }
       }
+    }
+
+    let timer;
+    function touchstartHandler(e,item) {
+      e.preventDefault()
+      timer = setTimeout(() => {
+        mark(item);
+      }, 500);
+    }
+    function touchendHandler() {
+      clearTimeout(timer);
     }
 
     function isWin() {
@@ -248,13 +280,20 @@ export default defineComponent({
       baseDate,
       check,
       mark,
+      touchstartHandler,
+      touchendHandler,
       reStart,
+      level,
+      changeLevel,
     };
   },
 });
 </script>
 
 <style lang="scss">
+button {
+  margin: 5px;
+}
 main {
   background-color: #efefef;
 
@@ -295,6 +334,16 @@ main {
         border: dashed #5e5e5e 1px;
       }
     }
+  }
+}
+@media only screen and (max-width: 425px) {
+  main .table {
+    width: 390px;
+  }
+  main .table .row .item {
+    width: 31px;
+    height: 31px;
+    margin: 3px;
   }
 }
 </style>
